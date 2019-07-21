@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
+using WebUyBanV5.Models.DAO;
 
 namespace WebUyBanV5.Controllers
 {
@@ -12,19 +13,31 @@ namespace WebUyBanV5.Controllers
         {
             return View();
         }
-
-        public ActionResult About()
+        public JsonResult Login(string username, string password)
         {
-            ViewBag.Message = "Your application description page.";
-
-            return View();
+            int check = new ModifyAccount().VerifyLogin(username, password);
+            if (check == 0)
+            {
+                return Json("w1", JsonRequestBehavior.AllowGet);
+            }
+            else if(check == -1)
+            {
+                return Json("w2", JsonRequestBehavior.AllowGet);
+            }
+            else
+            {
+                int useID = new ModifyUser().GetUserIDBy_User_Pass(username);
+                int perID = new ModifyAccount().GetPerIDBy_Use_Pass(username);
+                Session["user"] = useID;
+                Session["permission"] = perID;
+                return Json("", JsonRequestBehavior.AllowGet);
+            }
         }
-
-        public ActionResult Contact()
+        public ActionResult Logout()
         {
-            ViewBag.Message = "Your contact page.";
-
-            return View();
+            Session.Abandon();
+            Session.Clear();
+            return View("Index");
         }
     }
 }

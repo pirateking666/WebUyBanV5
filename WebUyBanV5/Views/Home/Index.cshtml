@@ -1,31 +1,128 @@
-﻿@{
-    ViewBag.Title = "Home Page";
+﻿@model WebUyBanV5.Models.account
+@{
+    ViewBag.Title = "Login";
 }
 
-<div class="jumbotron">
-    <h1>ASP.NET</h1>
-    <p class="lead">ASP.NET is a free web framework for building great Web sites and Web applications using HTML, CSS and JavaScript.</p>
-    <p><a href="https://asp.net" class="btn btn-primary btn-lg">Learn more &raquo;</a></p>
+<div class="container">
+    <div class="row">
+        <div class="col-12 position-absolute" style="z-index:999;opacity:0.85;display:none;" id="alert_box">
+            <div class="col-4 offset-6">
+                <div class="alert alert-warning alert-dismissible fade show" role="alert" id="alert_color">
+                    <span id="alert_content"></span>
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 my-auto">
+            <div class="row justify-content-center">
+                <div class="col-10 col-sm-6 col-lg-4 border p-0 rounded">
+                    <div class="col-12 bg-primary py-1">
+                        <h5 class="text-center text-light">Đăng nhập</h5>
+                    </div>
+                    <div class="col-12 mt-3">
+                        <div class="row">
+                            <div class="col-5 p-1 d-none d-md-block">
+                                <p class="text-right">Tên tài khoản:</p>
+                            </div>
+                            <div class="col-12 col-md-7">
+                                @Html.TextBoxFor(Model => Model.Username, new { @class = "form-control", @placeholder = "Tên tài khoản...", @style = "height: 2rem;", @onblur = "valid_username()" })
+                                @Html.ValidationMessageFor(Model => Model.Username, "", new { @id = "acc_Username_validate" })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="w-100 d-block d-md-none mt-3"></div>
+                    <div class="col-12">
+                        <div class="row">
+                            <div class="col-5 p-1 d-none d-md-block">
+                                <p class="text-right">Mật khẩu:</p>
+                            </div>
+                            <div class="col-12 col-md-7">
+                                @Html.PasswordFor(Model => Model.Password, new { @class = "form-control", @placeholder = "Mật khẩu...", @style = "height: 2rem;", @onblur = "valid_password()" })
+                                @Html.ValidationMessageFor(Model => Model.Password, "", new { @id = "acc_Password_validate" })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="w-100 d-block d-md-none mt-3"></div>
+                    <div class="col-12 mb-3">
+                        <div class="row">
+                            <div class="col-7 offset-md-5 offset-0">
+                                <a href="#" class="btn btn-success btn-sm" onclick="Login()"><i class="fa fa-sign-in"></i> Đăng nhập</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
-
-<div class="row">
-    <div class="col-md-4">
-        <h2>Getting started</h2>
-        <p>
-            ASP.NET MVC gives you a powerful, patterns-based way to build dynamic websites that
-            enables a clean separation of concerns and gives you full control over markup
-            for enjoyable, agile development.
-        </p>
-        <p><a class="btn btn-default" href="https://go.microsoft.com/fwlink/?LinkId=301865">Learn more &raquo;</a></p>
-    </div>
-    <div class="col-md-4">
-        <h2>Get more libraries</h2>
-        <p>NuGet is a free Visual Studio extension that makes it easy to add, remove, and update libraries and tools in Visual Studio projects.</p>
-        <p><a class="btn btn-default" href="https://go.microsoft.com/fwlink/?LinkId=301866">Learn more &raquo;</a></p>
-    </div>
-    <div class="col-md-4">
-        <h2>Web Hosting</h2>
-        <p>You can easily find a web hosting company that offers the right mix of features and price for your applications.</p>
-        <p><a class="btn btn-default" href="https://go.microsoft.com/fwlink/?LinkId=301867">Learn more &raquo;</a></p>
-    </div>
-</div>
+<script>
+    valid_username = function () {
+        if ($("#Username").val() == '' || $("#Username").val() == null) {
+            $("#Username").removeClass("is-valid").addClass("is-invalid");
+            $("#acc_Username_validate").html("Vui lòng nhập tên tài khoản!");
+            $("#acc_Username_validate").addClass("invalid-feedback");
+            return false;
+        }
+        else {
+            $("#Username").removeClass("is-invalid").addClass("is-valid");
+            $("#acc_Username_validate").removeClass("invalid-feedback");
+            $("#acc_Username_validate").html("");
+            return true;
+        }
+    }
+    valid_password = function () {
+        if ($("#Password").val() == '' || $("#Password").val() == null) {
+            $("#Password").removeClass("is-valid").addClass("is-invalid");
+            $("#acc_Password_validate").html("Vui lòng nhập tên tài khoản!");
+            $("#acc_Password_validate").addClass("invalid-feedback");
+            return false;
+        }
+        else {
+            $("#Password").removeClass("is-invalid").addClass("is-valid");
+            $("#acc_Password_validate").removeClass("invalid-feedback");
+            $("#acc_Password_validate").html("");
+            return true;
+        }
+    }
+    valid_form = function () {
+        var check = true;
+        if (!valid_username()) {
+            check = false;
+        }
+        if (!valid_password()) {
+            check = false;
+        }
+        return check;
+    }
+    var Login = function () {
+        if (!valid_form()) {
+            return false;
+        }
+        var use = $("#Username").val();
+        var pas = $("#Password").val();
+        $.ajax({
+            type: "post",
+            url: "/Home/Login",
+            data: { username: use, password: pas },
+            success: function (result) {
+                if (result == "w1") {
+                    $("#alert_color").removeClass().addClass("alert alert-danger alert-dismissible fade show");
+                    $("#alert_content").html("Tên tài khoản không tồn tại!");
+                    $("#delete_permission_type").modal("hide");
+                    $("#alert_box").fadeIn(500).delay(2000).fadeOut(500);
+                }
+                else if (result == "w2") {
+                    $("#alert_color").removeClass().addClass("alert alert-danger alert-dismissible fade show");
+                    $("#alert_content").html("Sai mật khẩu!");
+                    $("#delete_permission_type").modal("hide");
+                    $("#alert_box").fadeIn(500).delay(2000).fadeOut(500);
+                }
+                else {
+                    window.location.href = "/Admin";
+                }
+            }
+        })
+    }
+</script>

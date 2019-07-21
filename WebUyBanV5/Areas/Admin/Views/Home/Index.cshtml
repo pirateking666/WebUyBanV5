@@ -1,0 +1,1028 @@
+﻿@model WebUyBanV5.Areas.Admin.Models.PermisionManagerModel
+@{
+    ViewBag.Title = "Quản lý phân quyền";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout_Admin.cshtml";
+}
+<div class="col-12 position-absolute" style="z-index:999;display:none;" id="alert_box">
+    <div class="row">
+        <div class="col-4 offset-5">
+            <div class="alert alert-warning alert-dismissible fade show" role="alert" id="alert_color">
+                <span id="alert_content"></span>
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="container-fluid my-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="row">
+                <div class="col-3">
+                    <div class="card">
+                        <div class="card-header bg-info">
+                            <p class="my-0 text-light d-inline h5 align-middle text-uppercase"><strong>Loại quyền</strong></p>
+                            <a class="btn btn-outline-light btn-sm float-right" href="#" onclick="open_insert_dialog()"><i class="fa fa-plus"></i></a>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-striped" id="table_per_type">
+                                @if (ViewBag.ListPermission != null)
+                                {
+                                    foreach (var item in ViewBag.ListPermission)
+                                    {
+                                        <tr id="per_type_row_@item.ID">
+                                            <td id="name_per_@item.ID"><strong>@item.Name</strong></td>
+                                            <td width="10%"><a href="#" onclick="update_per_type(@item.ID)" class="btn btn-warning btn-sm"><i class="fa fa-pencil-square-o"></i></a></td>
+                                            <td width="10%"><a href="#" onclick="delete_per_type(@item.ID)" class="btn btn-danger btn-sm"><i class="fa fa-trash-o"></i></a></td>
+                                        </tr>
+                                    }
+                                }
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-9">
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <p class="my-0 text-dark d-inline h5 align-middle h5 text-uppercase">Danh sách người dùng</p>
+                            <a href="@Url.Action("Logout", "Home", new { @area = ""}) " class="btn btn-success btn-sm ml-1"><i class="fa fa-sign-out"></i>Đăng xuất</a>
+                            <a class="btn btn-primary btn-sm float-right" href="#" onclick="open_insert_dialog_user()"><i class="fa fa-plus"></i> Thêm người dùng</a>
+                            <a class="btn btn-danger btn-sm float-right mr-2" href="#" onclick="open_delete_dialog_user()"><i class="fa fa-trash-o"></i> Xóa người dùng đã chọn</a>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-striped table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th></th>
+                                        <th>STT</th>
+                                        <th>Tên tài khoản</th>
+                                        <th>Họ</th>
+                                        <th>Tên</th>
+                                        <th>SDT</th>
+                                        <th>Trạng thái</th>
+                                        <th>Quyền</th>
+                                        <th>Tùy chọn</th>
+                                    </tr>
+                                </thead>
+                                @if (ViewBag.ListUser != null)
+                                {
+                                    int count = 1;
+                                    <tbody id="table_user_content">
+                                        @foreach (var item in ViewBag.ListUser)
+                                        {
+                                            <tr id="user_row_@item.userID">
+                                                <td>
+                                                    <div class="custom-control custom-checkbox">
+                                                        <input type="checkbox" class="custom-control-input" id="check_box_user_@item.userID">
+                                                        <label class="custom-control-label" for="check_box_user_@item.userID"></label>
+                                                    </div>
+                                                </td>
+                                                <td id="user_stt_@item.userID">@count</td>
+                                                <td id="user_username_@item.userID">@item.username</td>
+                                                <td id="user_firstname_@item.userID">@item.FirstName</td>
+                                                <td id="user_lastname_@item.userID">@item.LastName</td>
+                                                <td id="user_phone_@item.userID">@item.Phone</td>
+                                                @if (item.Status == 1)
+                                                {
+                                                    <td><span id="user_status_@item.userID" style="color:green">Active</span></td>
+                                                }
+                                                else
+                                                {
+                                                    <td><span id="user_status_@item.userID" style="color:red">Block</span></td>
+                                                }
+                                                <td id="user_pername_@item.userID">@item.permissionName</td>
+                                                <td>
+                                                    <a href="#" class="btn btn-info btn-sm" onclick="user_details(@item.userID)"><i class="fa fa-eye"></i></a>
+                                                    <a href="#" class="btn btn-warning btn-sm" onclick="user_update(@item.userID)"><i class="fa fa-pencil-square-o"></i></a>
+                                                    <a href="#" class="btn btn-danger btn-sm" onclick="user_delete(@item.userID)"><i class="fa fa-trash"></i></a>
+                                                </td>
+                                            </tr>
+                                            count++;
+                                        }
+                                    </tbody>
+                                }
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@*Modal Box*@
+@*Modal Box Insert New Permission*@
+<div class="modal fade" id="insert_permission_type" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Thêm loại quyền</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="form_insert_permissiontype">
+                    <div class="form-group row">
+                        <div class="col-5">
+                            <label for="permissiontype_input" class="col-form-label"><strong>Tên loại quyền:</strong></label>
+                        </div>
+                        <div class="col-7">
+                            @Html.TextBoxFor(model => model.per.Name, new { @class = "form-control", @placeholder = "Tên loại quyền...", @onblur = "check_valid_permission_name()" })
+                            @Html.ValidationMessageFor(model => model.per.Name, "", new { @id = "per_Name_validate" })
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <div class="col-12">
+                            <div class="row">
+                                <div class="col-6">
+                                    <label for="permissiontype_input" class="col-form-label"><strong>Chọn quyền:</strong></label>
+                                </div>
+                                <div class="col-6">
+                                    <a href="#" class="btn btn-light float-right" onclick="all_check()"><i class="fa fa-check-square-o"></i> Chọn tất cả</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 mt-3">
+                            @if (ViewBag.ListPer != null)
+                            {
+                                int count = 0;
+                                <div class="col-12">
+                                    <div class="row">
+                                        @foreach (var item in ViewBag.ListPer)
+                                        {
+                                            if (count == 4)
+                                            {
+                                                <hr class="my-4" />
+                                                count = 0;
+                                            }
+                                            if (item.dataactionID == 5)
+                                            {
+                                                <div class="col-6">
+                                                    <div class="custom-control custom-checkbox">
+                                                        <input type="checkbox" class="custom-control-input" id="check_box_@item.ID">
+                                                        <label class="custom-control-label" for="check_box_@item.ID">Thêm @item.TableName_vi</label>
+                                                    </div>
+                                                </div>
+                                                count++;
+                                            }
+                                            else if (item.dataactionID == 6)
+                                            {
+                                                <div class="col-6">
+                                                    <div class="custom-control custom-checkbox">
+                                                        <input type="checkbox" class="custom-control-input" id="check_box_@item.ID">
+                                                        <label class="custom-control-label" for="check_box_@item.ID">Xem @item.TableName_vi</label>
+                                                    </div>
+                                                </div>
+                                                count++;
+                                            }
+                                            else if (item.dataactionID == 7)
+                                            {
+                                                <div class="col-6">
+                                                    <div class="custom-control custom-checkbox">
+                                                        <input type="checkbox" class="custom-control-input" id="check_box_@item.ID">
+                                                        <label class="custom-control-label" for="check_box_@item.ID">Sửa @item.TableName_vi</label>
+                                                    </div>
+                                                </div>
+                                                count++;
+                                            }
+                                            else
+                                            {
+                                                <div class="col-6">
+                                                    <div class="custom-control custom-checkbox">
+                                                        <input type="checkbox" class="custom-control-input" id="check_box_@item.ID">
+                                                        <label class="custom-control-label" for="check_box_@item.ID">Xóa @item.TableName_vi</label>
+                                                    </div>
+                                                </div>
+                                                count++;
+                                            }
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                        <div class="col-12" id="per_Option_validate" style="display:none;">
+                            <div class="col-12">
+                                <span class="invalid-feedback" style="display:block;">Loại quyền phải có ít nhất một quyền!</span>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Hủy</button>
+                <button type="submit" class="btn btn-primary btn-sm" onclick="submit_insert_permissiontype()">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@*Modal Box Update Permission*@
+<div class="modal fade" id="update_permission_type" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Sửa loại quyền</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="form_insert_permissiontype">
+                    <div class="form-group row">
+                        <div class="col-5">
+                            <label for="permissiontype_input" class="col-form-label"><strong>Tên loại quyền:</strong></label>
+                        </div>
+                        <div class="col-7">
+                            @Html.TextBoxFor(model => model.per_u.Name, new { @class = "form-control", @placeholder = "Tên loại quyền...", @onblur = "check_valid_permission_name_u()" })
+                            @Html.ValidationMessageFor(model => model.per_u.Name, "", new { @id = "per_Name_validate_u" })
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <div class="col-12">
+                            <div class="row">
+                                <div class="col-6">
+                                    <label for="permissiontype_input" class="col-form-label"><strong>Chọn quyền:</strong></label>
+                                </div>
+                                <div class="col-6">
+                                    <a href="#" class="btn btn-light float-right" onclick="all_check_u()"><i class="fa fa-check-square-o"></i> Chọn tất cả</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 mt-3">
+                            @if (ViewBag.ListPer != null)
+                            {
+                                int count = 0;
+                                <div class="col-12">
+                                    <div class="row">
+                                        @foreach (var item in ViewBag.ListPer)
+                                        {
+                                            if (count == 4)
+                                            {
+                                                <hr class="my-4" />
+                                                count = 0;
+                                            }
+                                            if (item.dataactionID == 5)
+                                            {
+                                                <div class="col-6">
+                                                    <div class="custom-control custom-checkbox">
+                                                        <input type="checkbox" class="custom-control-input" id="check_box_u_@item.ID">
+                                                        <label class="custom-control-label" for="check_box_u_@item.ID">Thêm @item.TableName_vi</label>
+                                                    </div>
+                                                </div>
+                                                count++;
+                                            }
+                                            else if (item.dataactionID == 6)
+                                            {
+                                                <div class="col-6">
+                                                    <div class="custom-control custom-checkbox">
+                                                        <input type="checkbox" class="custom-control-input" id="check_box_u_@item.ID">
+                                                        <label class="custom-control-label" for="check_box_u_@item.ID">Xem @item.TableName_vi</label>
+                                                    </div>
+                                                </div>
+                                                count++;
+                                            }
+                                            else if (item.dataactionID == 7)
+                                            {
+                                                <div class="col-6">
+                                                    <div class="custom-control custom-checkbox">
+                                                        <input type="checkbox" class="custom-control-input" id="check_box_u_@item.ID">
+                                                        <label class="custom-control-label" for="check_box_u_@item.ID">Sửa @item.TableName_vi</label>
+                                                    </div>
+                                                </div>
+                                                count++;
+                                            }
+                                            else
+                                            {
+                                                <div class="col-6">
+                                                    <div class="custom-control custom-checkbox">
+                                                        <input type="checkbox" class="custom-control-input" id="check_box_u_@item.ID">
+                                                        <label class="custom-control-label" for="check_box_u_@item.ID">Xóa @item.TableName_vi</label>
+                                                    </div>
+                                                </div>
+                                                count++;
+                                            }
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                        <div class="col-12" id="per_Option_validate_u" style="display:none;">
+                            <div class="col-12">
+                                <span class="invalid-feedback" style="display:block;">Loại quyền phải có ít nhất một quyền!</span>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Hủy</button>
+                <button type="submit" class="btn btn-primary btn-sm" onclick="submit_update_permissiontype()">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@*Modal Box Delete Permission*@
+<div class="modal fade" id="delete_permission_type" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Xóa loại quyền</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <span id="content_delete"></span>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Hủy</button>
+                <button type="submit" class="btn btn-primary btn-sm" onclick="submit_delete_permissiontype()">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="insert_user" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Thêm người dùng</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="form_insert_user">
+                    <div class="form-group row">
+                        <div class="col-5">
+                            <label for="permissiontype_input" class="col-form-label"><strong>Họ:</strong></label>
+                        </div>
+                        <div class="col-7">
+                            @Html.TextBoxFor(model => model.um.FirstName, new { @class = "form-control", @placeholder = "Họ...", @onblur = "check_valid_user_firstname('um')" })
+                            @Html.ValidationMessageFor(model => model.um.FirstName, "", new { @id = "um_FirstName_validate" })
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <div class="col-5">
+                            <label for="permissiontype_input" class="col-form-label"><strong>Tên:</strong></label>
+                        </div>
+                        <div class="col-7">
+                            @Html.TextBoxFor(model => model.um.LastName, new { @class = "form-control", @placeholder = "Tên...", @onblur = "check_valid_user_lastname('um')" })
+                            @Html.ValidationMessageFor(model => model.um.LastName, "", new { @id = "um_LastName_validate" })
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <div class="col-5">
+                            <label for="permissiontype_input" class="col-form-label"><strong>Ngày sinh:</strong></label>
+                        </div>
+                        <div class="col-7">
+                            @*<input type="date" id="um_Birth" class="form-control" onblur="check_valid_user_birth('um')" />*@
+                            @Html.TextBoxFor(Model => Model.um.Birth, new { @class = "form-control", onblur = "check_valid_user_birth('um')", @id = "um_Birth", @type = "date" })
+                            @Html.ValidationMessageFor(model => model.um.Birth, "", new { @id = "um_Birth_validate" })
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <div class="col-5">
+                            <label for="permissiontype_input" class="col-form-label"><strong>Giới tính:</strong></label>
+                        </div>
+                        <div class="col-7">
+                            @Html.DropDownListFor(Model => Model.um.Gender, new List<SelectListItem> { new SelectListItem { Text = "Nam", Value = "Nam" }, new SelectListItem { Text = "Nữ", Value = "Nữ" } }, new { @class = "form-control" })
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <div class="col-5">
+                            <label for="permissiontype_input" class="col-form-label"><strong>Số điện thoại:</strong></label>
+                        </div>
+                        <div class="col-7">
+                            @Html.TextBoxFor(model => model.um.Phone, new { @class = "form-control", @placeholder = "Số điện thoại...", @onblur = "check_valid_user_phone('um')" })
+                            @Html.ValidationMessageFor(model => model.um.Phone, "", new { @id = "um_Phone_validate" })
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <div class="col-5">
+                            <label for="permissiontype_input" class="col-form-label"><strong>Email:</strong></label>
+                        </div>
+                        <div class="col-7">
+                            @Html.TextBoxFor(model => model.um.Email, new { @class = "form-control", @placeholder = "Email...", @onblur = "check_valid_user_email('um')" })
+                            @Html.ValidationMessageFor(model => model.um.Email, "", new { @id = "um_Email_validate" })
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <div class="col-5">
+                            <label for="permissiontype_input" class="col-form-label"><strong>Địa chỉ:</strong></label>
+                        </div>
+                        <div class="col-7">
+                            @Html.TextBoxFor(model => model.um.Address, new { @class = "form-control", @placeholder = "Địa chỉ...", @onblur = "check_valid_user_address('um')" })
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <div class="col-5">
+                            <label for="permissiontype_input" class="col-form-label"><strong>Tên tài khoản:</strong></label>
+                        </div>
+                        <div class="col-7">
+                            @Html.TextBoxFor(model => model.um.username, new { @class = "form-control", @placeholder = "Tên tài khoản...", @onblur = "check_valid_user_username('um')" })
+                            @Html.ValidationMessageFor(model => model.um.username, "", new { @id = "um_username_validate" })
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <div class="col-5">
+                            <label for="permissiontype_input" class="col-form-label"><strong>Mật khẩu:</strong></label>
+                        </div>
+                        <div class="col-7">
+                            @Html.PasswordFor(model => model.um.password, new { @class = "form-control", @placeholder = "Mật khẩu...", @onblur = "check_valid_user_password('um')" })
+                            @Html.ValidationMessageFor(model => model.um.password, "", new { @id = "um_password_validate" })
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <div class="col-5">
+                            <label for="permissiontype_input" class="col-form-label"><strong>Xác nhận mật khẩu:</strong></label>
+                        </div>
+                        <div class="col-7">
+                            @Html.PasswordFor(model => model.um.confirm_pass, new { @class = "form-control", @placeholder = "Xác nhận mật khẩu...", @onblur = "check_valid_user_confirm_pass('um')" })
+                            @Html.ValidationMessageFor(model => model.um.confirm_pass, "", new { @id = "um_confirm_pass_validate" })
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <div class="col-5">
+                            <label for="permissiontype_input" class="col-form-label"><strong>Chọn loại quyền:</strong></label>
+                        </div>
+                        <div class="col-7">
+                            @Html.DropDownListFor(Model => Model.um.permissionID, ViewBag.ListPermissionDrop as SelectList, new { @class = "form-control" })
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Hủy</button>
+                <button type="submit" class="btn btn-primary btn-sm" onclick="submit_insert_user('um')">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@*Give ID*@
+<input type="text" style="display:none;" id="per_type_id" />
+
+<script>
+    var open_insert_dialog = function () {
+        var num = '@ViewBag.NUmOfPer';
+        $("#insert_permission_type").modal("show");
+        for (var i = 1; i <= num; i++) {
+            var temp = "#check_box_" + i;
+            $(temp).prop("checked", false);
+        }
+
+    }
+    function check_valid_permission_name() {
+        if ($("#per_Name").val() == '' || $("#per_Name").val() == null) {
+            $("#per_Name").removeClass("is-valid").addClass("is-invalid");
+            $("#per_Name_validate").html("Vui lòng nhập tên loại quyền!");
+            $("#per_Name_validate").addClass("invalid-feedback");
+            return false;
+        }
+        else {
+            $("#per_Name").removeClass("is-invalid").addClass("is-valid");
+            $("#per_Name_validate").removeClass("invalid-feedback");
+            $("#per_Name_validate").html("");
+            return true;
+        }
+    }
+    function check_valid_permission_type() {
+        var check = true;
+        //check name
+        if (!check_valid_permission_name()) {
+            check = false;
+        }
+        //check option
+        var num = parseInt('@ViewBag.NumOfPer');
+        var count = 0;
+        for (var i = 1; i <= num; i++) {
+            var temp = "#check_box_" + i;
+            if ($(temp).is(":checked")) {
+                count++;
+            }
+            else
+                continue;
+        }
+        if (count == 0) {
+            $("#per_Option_validate").show();
+            check = false;
+        }
+        else
+            $("#per_Option_validate").hide();
+        return check;
+    }
+    var all_check = function () {
+        var num = parseInt('@ViewBag.NumOfPer');
+        for (var i = 1; i <= num; i++) {
+            var temp = '#check_box_' + i;
+            //$(temp).attr("checked", "checked");
+            $(temp).prop("checked", true);
+        }
+    }
+    var all_check_u = function () {
+        var num = parseInt('@ViewBag.NumOfPer');
+        for (var i = 1; i <= num; i++) {
+            var temp = '#check_box_u_' + i;
+            //$(temp).attr("checked", "checked");
+            $(temp).prop("checked", true);
+        }
+    }
+    var submit_insert_permissiontype = function () {
+        //Check form
+        if (check_valid_permission_type() == false)
+            return false;
+        else {
+            var check_list = "";
+            var num = parseInt('@ViewBag.NumOfPer');
+            for (var i = 1; i <= num; i++) {
+                var temp = "#check_box_" + i;
+                if ($(temp).is(":checked")) {
+                    if (check_list == "") {
+                        check_list += i;
+                    }
+                    else
+                        check_list += "-" + i;
+                }
+            }
+            var name = $("#per_Name").val();
+            $.ajax({
+                type: "post",
+                url: "/Admin/Home/Create_Per_Type",
+                data: { name: name, check_list: check_list },
+                success: function (result) {
+                    if (result == "pe") {
+                        clear_per_type();
+                        //alert
+                        $("#alert_color").removeClass().addClass("alert alert-warning alert-dismissible fade show");
+                        $("#alert_content").html("Bạn không có quyền thực hiện chức năng này!");
+                        $("#insert_permission_type").modal("hide");
+                        $("#alert_box").fadeIn(500).delay(2000).fadeOut(500);
+                    }
+                    else if (result == 'w1') {
+                        //clear
+                        clear_per_type();
+                        //alert
+                        $("#alert_color").removeClass().addClass("alert alert-danger alert-dismissible fade show");
+                        $("#alert_content").html("Tên loại quyền đã tồn tại!");
+                        $("#insert_permission_type").modal("hide");
+                        $("#alert_box").fadeIn(500).delay(2000).fadeOut(500);
+                    }
+                    else if (result == 'w2') {
+                        //clear
+                        clear_per_type();
+                        //alert
+                        $("#alert_color").removeClass().addClass("alert alert-danger alert-dismissible fade show");
+                        $("#alert_content").html("Thêm loại quyền thất bại!");
+                        $("#insert_permission_type").modal("hide");
+                        $("#alert_box").fadeIn(500).delay(2000).fadeOut(500);
+                    }
+                    else {
+                        $("#table_per_type").append('<tr id="per_type_row_' + result.ID + '">' +
+                            '<td id="name_per_' + result.ID + '"><strong>' + result.Name + '</strong></td>' +
+                            '<td width="10%"><a href="#" onclick="update_per_type(' + result.ID + ')" class="btn btn-warning btn-sm"><i class="fa fa-pencil-square-o"></i></a></td>' +
+                            '<td width="10%"><a href="#" onclick="delete_per_type(' + result.ID + ')" class="btn btn-danger btn-sm"><i class="fa fa-trash-o"></i></a></td>' +
+                            '</tr>');
+                        //clear
+                        clear_per_type();
+                        //alert
+                        $("#alert_color").removeClass().addClass("alert alert-success alert-dismissible fade show");
+                        $("#alert_content").html("Thêm loại quyền thành công!");
+                        $("#insert_permission_type").modal("hide");
+                        $("#alert_box").fadeIn(500).delay(2000).fadeOut(500);
+                    }
+                }
+            })
+        }
+    }
+    function clear_per_type() {
+        $("#per_Name").val("");
+        var num = parseInt('@ViewBag.NumOfPer');
+        for (var i = 1; i <= num; i++) {
+            var temp = "#check_box_" + i;
+            $(temp).prop("checked", false);
+        }
+    }
+    var update_per_type = function (ID) {
+        var num = parseInt('@ViewBag.NumOfPer');
+        for (var i = 1; i <= num; i++) {
+            var temp = "#check_box_u_" + i;
+            $(temp).prop("checked", false);
+        }
+        $("#per_type_id").val(ID);
+        $.ajax({
+            type: "post",
+            url: "/Admin/Home/Load_Update_Per_Type",
+            data: { perID: ID },
+            success: function (result) {
+                if (result == "pe") {
+                    $("#alert_color").removeClass().addClass("alert alert-warning alert-dismissible fade show");
+                    $("#alert_content").html("Bạn không có quyền thực hiện chức năng này!");
+                    $("#insert_permission_type").modal("hide");
+                    $("#alert_box").fadeIn(500).delay(2000).fadeOut(500);
+                }
+                else {
+                    $("#per_u_Name").val(result.name.toString());
+                    var arr = result.list.toString().split('-');
+                    for (var i = 0; i < arr.length; i++) {
+                        var temp = "#check_box_u_" + arr[i];
+                        $(temp).prop("checked", true);
+                    }
+                    $("#update_permission_type").modal("show");
+                }
+            }
+        })
+    }
+    function check_valid_permission_name_u() {
+        if ($("#per_u_Name").val() == '' || $("#per_u_Name").val() == null) {
+            $("#per_u_Name").removeClass("is-valid").addClass("is-invalid");
+            $("#per_Name_validate_u").html("Vui lòng nhập tên loại quyền!");
+            $("#per_Name_validate_u").addClass("invalid-feedback");
+            return false;
+        }
+        else {
+            $("#per_u_Name").removeClass("is-invalid").addClass("is-valid");
+            $("#per_Name_validate_u").removeClass("invalid-feedback");
+            $("#per_Name_validate_u").html("");
+            return true;
+        }
+    }
+    check_valid_permission_type_u = function () {
+        var check = true;
+        //check name
+        if (!check_valid_permission_name_u()) {
+            check = false;
+        }
+        //check option
+        var num = parseInt('@ViewBag.NumOfPer');
+        var count = 0;
+        for (var i = 1; i <= num; i++) {
+            var temp = "#check_box_u_" + i;
+            if ($(temp).is(":checked")) {
+                count++;
+            }
+            else
+                continue;
+        }
+        if (count == 0) {
+            $("#per_Option_validate_u").show();
+            check = false;
+        }
+        else
+            $("#per_Option_validate_u").hide();
+        return check;
+    }
+    var submit_update_permissiontype = function () {
+        if (check_valid_permission_type_u() == false)
+            return false;
+        else {
+            var perID = parseInt($("#per_type_id").val());
+            var name = $("#per_u_Name").val();
+            var num = parseInt('@ViewBag.NumOfPer');
+            var check_list = "";
+            for (var i = 1; i <= num; i++) {
+                var temp = "#check_box_u_" + i;
+                if ($(temp).is(':checked')) {
+                    if (check_list == "") {
+                        check_list += i;
+                    }
+                    else {
+                        check_list += "-" + i;
+                    }
+                }
+            }
+            $.ajax({
+                type: "post",
+                url: "/Admin/Home/Update_Per_Type",
+                data: { perID: perID, name: name, check_list: check_list },
+                success: function (result) {
+                    if (result == "w1") {
+                        $("#alert_color").removeClass().addClass("alert alert-danger alert-dismissible fade show");
+                        $("#alert_content").html("Tên loại quyền đã tồn tại!");
+                        $("#update_permission_type").modal("hide");
+                        $("#alert_box").fadeIn(500).delay(2000).fadeOut(500);
+                    }
+                    else if (result == "w2") {
+                        $("#alert_color").removeClass().addClass("alert alert-danger alert-dismissible fade show");
+                        $("#alert_content").html("Sửa loại quyền thất bại!");
+                        $("#update_permission_type").modal("hide");
+                        $("#alert_box").fadeIn(500).delay(2000).fadeOut(500);
+                    }
+                    else {
+                        var per_name = "#name_per_" + perID;
+                        $(per_name).html('<strong>' + result.name.toString() + '</strong>');
+                        $("#alert_color").removeClass().addClass("alert alert-success alert-dismissible fade show");
+                        $("#alert_content").html("Sửa loại quyền thành công!");
+                        $("#update_permission_type").modal("hide");
+                        $("#alert_box").fadeIn(500).delay(2000).fadeOut(500);
+                    }
+                }
+            })
+        }
+    }
+    var delete_per_type = function (ID) {
+        $("#per_type_id").val(ID);
+        var name = "#name_per_" + ID + " strong";
+        $("#content_delete").html('Bạn có chắc chắn muốn xóa loại quyền "' + $(name).html() + '"?');
+        $("#delete_permission_type").modal("show");
+    }
+    var submit_delete_permissiontype = function () {
+        var perID = $("#per_type_id").val();
+        $.ajax({
+            type: "post",
+            url: "/Admin/Home/Delete_Per_Type",
+            data: { perID: perID },
+            success: function (result) {
+                if (result == "pe") {
+                    //alert
+                    $("#alert_color").removeClass().addClass("alert alert-warning alert-dismissible fade show");
+                    $("#alert_content").html("Bạn không có quyền thực hiện chức năng này!");
+                    $("#delete_permission_type").modal("hide");
+                    $("#alert_box").fadeIn(500).delay(2000).fadeOut(500);
+                }
+                else if (result == "w1") {
+                    $("#alert_color").removeClass().addClass("alert alert-danger alert-dismissible fade show");
+                    $("#alert_content").html("Xóa loại quyền thất bại!");
+                    $("#delete_permission_type").modal("hide");
+                    $("#alert_box").fadeIn(500).delay(2000).fadeOut(500);
+                }
+                else if (result == "w2") {
+                    $("#alert_color").removeClass().addClass("alert alert-danger alert-dismissible fade show");
+                    $("#alert_content").html("Vẫn còn tài khoản sử dụng quyền này!");
+                    $("#delete_permission_type").modal("hide");
+                    $("#alert_box").fadeIn(500).delay(2000).fadeOut(500);
+                }
+                else {
+                    var per_name = "#per_type_row_" + perID;
+                    $(per_name).hide();
+                    $("#alert_color").removeClass().addClass("alert alert-success alert-dismissible fade show");
+                    $("#alert_content").html("Xóa loại quyền thành công!");
+                    $("#delete_permission_type").modal("hide");
+                    $("#alert_box").fadeIn(500).delay(2000).fadeOut(500);
+                }
+            }
+        })
+    }
+    var open_insert_dialog_user = function () {
+        $("#insert_user").modal("show");
+    }
+    check_valid_user_firstname = function (ID) {
+        var temp = "#" + ID + "_FirstName";
+        var temp1 = temp + "_validate";
+        if ($(temp).val() == '' || $(temp).val() == null) {
+            $(temp).removeClass("is-valid").addClass("is-invalid");
+            $(temp1).html("Vui lòng nhập họ!");
+            $(temp1).addClass("invalid-feedback");
+            return false;
+        }
+        else {
+            $(temp).removeClass("is-invalid").addClass("is-valid");
+            $(temp1).removeClass("invalid-feedback");
+            $(temp1).html("");
+            return true;
+        }
+    }
+    check_valid_user_lastname = function (ID) {
+        var temp = "#" + ID + "_LastName";
+        var temp1 = temp + "_validate";
+        if ($(temp).val() == '' || $(temp).val() == null) {
+            $(temp).removeClass("is-valid").addClass("is-invalid");
+            $(temp1).html("Vui lòng nhập tên!");
+            $(temp1).addClass("invalid-feedback");
+            return false;
+        }
+        else {
+            $(temp).removeClass("is-invalid").addClass("is-valid");
+            $(temp1).removeClass("invalid-feedback");
+            $(temp1).html("");
+            return true;
+        }
+    }
+    check_valid_user_birth = function (ID) {
+        var temp = "#" + ID + "_Birth";
+        var temp1 = temp + "_validate";
+        if ($(temp).val() == '' || $(temp).val() == null) {
+            $(temp).removeClass("is-valid").addClass("is-invalid");
+            $(temp1).html("Vui lòng chọn ngày sinh!");
+            $(temp1).addClass("invalid-feedback");
+            return false;
+        }
+        else {
+            $(temp).removeClass("is-invalid").addClass("is-valid");
+            $(temp1).removeClass("invalid-feedback");
+            $(temp1).html("");
+            return true;
+        }
+    }
+    check_valid_user_phone = function (ID) {
+        var temp = "#" + ID + "_Phone";
+        var temp1 = temp + "_validate";
+        var regex = /((09|03|07|08|05)+([0-9]{8})\b)/;
+        if ($(temp).val() == '' || $(temp).val() == null) {
+            $(temp).removeClass("is-valid").addClass("is-invalid");
+            $(temp1).html("Vui lòng nhập số điện thoại!");
+            $(temp1).addClass("invalid-feedback");
+            return false;
+        }
+        else if (regex.test($(temp).val()) == false) {
+            $(temp).removeClass("is-valid").addClass("is-invalid");
+            $(temp1).html("Số điện thoại không hợp lệ!");
+            $(temp1).addClass("invalid-feedback");
+            return false;
+        }
+        else {
+            $(temp).removeClass("is-invalid").addClass("is-valid");
+            $(temp1).removeClass("invalid-feedback");
+            $(temp1).html("");
+            return true;
+        }
+    }
+    check_valid_user_email = function (ID) {
+        var temp = "#" + ID + "_Email";
+        var temp1 = temp + "_validate";
+        var regex = /^(([^<>()[\]\\.,;:\s@@\"]+(\.[^<>()[\]\\.,;:\s@@\"]+)*)|(\".+\"))@@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+        if ($(temp).val() != "") {
+            if (regex.test($(temp).val()) == false) {
+                $(temp).removeClass("is-valid").addClass("is-invalid");
+                $(temp1).html("Email không hợp lệ!");
+                $(temp1).addClass("invalid-feedback");
+                return false;
+            }
+            else {
+                $(temp).removeClass("is-invalid").addClass("is-valid");
+                $(temp1).removeClass("invalid-feedback");
+                $(temp1).html("");
+                return true;
+            }
+        }
+        else {
+            $(temp).removeClass("is-invalid").addClass("is-valid");
+            $(temp1).removeClass("invalid-feedback");
+            $(temp1).html("");
+            return true;
+        }
+    }
+    check_valid_user_username = function (ID) {
+        var temp = "#" + ID + "_username";
+        var temp1 = temp + "_validate";
+        if ($(temp).val() == '' || $(temp).val() == null) {
+            $(temp).removeClass("is-valid").addClass("is-invalid");
+            $(temp1).html("Vui lòng nhập tên tài khoản!");
+            $(temp1).addClass("invalid-feedback");
+            return false;
+        }
+        var ls = "@ViewBag.ListUsername".split('-');
+        for (var i = 0; i < ls.length; i++) {
+            if ($(temp).val() == ls[i].trim()) {
+                $(temp).removeClass("is-valid").addClass("is-invalid");
+                $(temp1).html("Tên tài khoản đã tồn tại!");
+                $(temp1).addClass("invalid-feedback");
+                return false;
+            }
+        }
+        $(temp).removeClass("is-invalid").addClass("is-valid");
+        $(temp1).removeClass("invalid-feedback");
+        $(temp1).html("");
+        return true;
+    }
+    check_valid_user_password = function (ID) {
+        var temp = "#" + ID + "_password";
+        var temp1 = temp + "_validate";
+        if ($(temp).val() == '' || $(temp).val() == null) {
+            $(temp).removeClass("is-valid").addClass("is-invalid");
+            $(temp1).html("Vui lòng nhập mật khẩu!");
+            $(temp1).addClass("invalid-feedback");
+            return false;
+        }
+        else {
+            $(temp).removeClass("is-invalid").addClass("is-valid");
+            $(temp1).removeClass("invalid-feedback");
+            $(temp1).html("");
+            return true;
+        }
+    }
+    check_valid_user_confirm_pass = function (ID) {
+        var temp = "#" + ID + "_confirm_pass";
+        var temp1 = temp + "_validate";
+        var pass = "#" + ID + "_password";
+        if ($(temp).val() == '' || $(temp).val() == null) {
+            $(temp).removeClass("is-valid").addClass("is-invalid");
+            $(temp1).html("Vui lòng xác nhận mật khẩu!");
+            $(temp1).addClass("invalid-feedback");
+            return false;
+        }
+        else if ($(temp).val() != $(pass).val()) {
+            $(temp).removeClass("is-valid").addClass("is-invalid");
+            $(temp1).html("Xác nhận mật khẩu không khớp!");
+            $(temp1).addClass("invalid-feedback");
+            return false;
+        }
+        else {
+            $(temp).removeClass("is-invalid").addClass("is-valid");
+            $(temp1).removeClass("invalid-feedback");
+            $(temp1).html("");
+            return true;
+        }
+    }
+    check_valid_user_address = function (ID) {
+        var temp = "#" + ID + "_Address";
+        $(temp).removeClass("is-invalid").addClass("is-valid");
+        return true;
+    }
+    check_valid_user_form = function (ID) {
+        var check = true;
+        if (!check_valid_user_firstname(ID)) {
+            check = false;
+        }
+        if (!check_valid_user_lastname(ID)) {
+            check = false;
+        }
+        if (!check_valid_user_birth(ID)) {
+            check = false;
+        }
+        if (!check_valid_user_phone(ID)) {
+            check = false;
+        }
+        if (!check_valid_user_email(ID)) {
+            check = false;
+        }
+        if (!check_valid_user_username(ID)) {
+            check = false;
+        }
+        if (!check_valid_user_password(ID)) {
+            check = false;
+        }
+        if (!check_valid_user_confirm_pass(ID)) {
+            check = false;
+        }
+        check_valid_user_address(ID);
+        return check;
+    }
+    var submit_insert_user = function (ID) {
+        //data_test
+        $("#um_FirstName").val("Nguyen");
+        $("#um_LastName").val("Tan");
+        $("#um_Birth").val("2019-02-15");
+        $("#um_Phone").val("0906971622");
+        $("#um_Email").val("abc@gmail.com");
+        //$("#um_username").val("abc");
+        $("#um_password").val("123");
+        $("#um_confirm_pass").val("123");
+
+        if (!check_valid_user_form(ID)) {
+            return false;
+        }
+        else {
+            var data = $("#form_insert_user").serialize();
+            $.ajax({
+                type: "post",
+                url: "/Admin/Home/Insert_User",
+                data: data,
+                success: function (result) {
+                    if (result == "pe") {
+                        $("#alert_color").removeClass().addClass("alert alert-warning alert-dismissible fade show");
+                        $("#alert_content").html("Bạn không có quyền thực hiện chức năng này!");
+                        $("#insert_user").modal("hide");
+                        $("#alert_box").fadeIn(500).delay(2000).fadeOut(500);
+                    }
+                    else if (result == "wa") {
+                        $("#alert_color").removeClass().addClass("alert alert-danger alert-dismissible fade show");
+                        $("#alert_content").html("Xảy ra lỗi khi thêm tài khoản!");
+                        $("#insert_user").modal("hide");
+                        $("#alert_box").fadeIn(500).delay(2000).fadeOut(500);
+                    }
+                    else if (result == "wu") {
+                        $("#alert_color").removeClass().addClass("alert alert-danger alert-dismissible fade show");
+                        $("#alert_content").html("Xảy ra lỗi khi thêm người dùng!");
+                        $("#insert_user").modal("hide");
+                        $("#alert_box").fadeIn(500).delay(2000).fadeOut(500);
+                    }
+                    else {
+                        $("#table_user_content").append('<tr id="user_row_' + result.id + '"><td>' +
+                            '<div class="custom-control custom-checkbox">' +
+                            '<input type="checkbox" class="custom-control-input" id="check_box_user_' + result.id + '">' +
+                            '<label class="custom-control-label" for="check_box_user_' + result.id + '"></label></div></td>' +
+                            '<td>' + parseInt('@ViewBag.NumOfUser') + '</td>' +
+                            '<td>' + result.username + '</td>' +
+                            '<td>' + result.firstname + '</td>' +
+                            '<td>' + result.lastname + '</td>' +
+                            '<td>' + result.phone + '</td>' +
+                            '<td><span id="user_status" style="color:green">Active</span></td>' +
+                            '<td>' + result.permissionname + '</td>' +
+                            '<td><a href="#" class="btn btn-info btn-sm" onclick="user_details(' + result.id + ')"><i class="fa fa-eye"></i></a>' +
+                            '<a href="#" class="btn btn-warning btn-sm" onclick="user_update(' + result.id + ')"><i class="fa fa-pencil-square-o"></i></a>' +
+                            '<a href="#" class="btn btn-danger btn-sm" onclick="user_delete(' + result.id + ')"><i class="fa fa-trash"></i></a></td></tr>');
+
+                        $("#alert_color").removeClass().addClass("alert alert-success alert-dismissible fade show");
+                        $("#alert_content").html("Thêm người dùng thành công!");
+                        $("#insert_user").modal("hide");
+                        $("#alert_box").fadeIn(500).delay(2000).fadeOut(500);
+                    }
+                }
+            })
+        }
+    }
+</script>
